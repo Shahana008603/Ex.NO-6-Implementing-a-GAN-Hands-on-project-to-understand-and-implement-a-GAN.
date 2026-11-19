@@ -163,8 +163,95 @@ if (i + 1) % 100 == 0:
             plt.imshow(np.transpose(grid, (1, 2, 0)))
             plt.axis("off")
             plt.show()
+# Program
 
-    
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import numpy as np
+
+(x_train, _), (_, _) = tf.keras.datasets.mnist.load_data()
+
+x_train = (x_train.astype('float32') - 127.5) / 127.5
+x_train = x_train.reshape(-1, 784)
+
+generator = tf.keras.Sequential([
+    tf.keras.layers.Dense(256, activation='relu', input_dim=100),
+    tf.keras.layers.Dense(512, activation='relu'),
+    tf.keras.layers.Dense(784, activation='tanh')
+])
+
+discriminator = tf.keras.Sequential([
+    tf.keras.layers.Dense(512, activation='relu', input_shape=(784,)),
+    tf.keras.layers.Dense(256, activation='relu'),
+    tf.keras.layers.Dense(1, activation='sigmoid')
+])
+
+discriminator.compile(
+    optimizer='adam',
+    loss='binary_crossentropy'
+)
+
+discriminator.trainable = False
+
+gan = tf.keras.Sequential([generator, discriminator])
+
+gan.compile(
+    optimizer='adam',
+    loss='binary_crossentropy'
+)
+
+epochs = 1000
+batch_size = 128
+
+for epoch in range(epochs):
+    noise = np.random.normal(0, 1, (batch_size, 100))
+    fake_images = generator.predict(noise, verbose=0)
+
+    real_images = x_train[
+        np.random.randint(0, x_train.shape[0], batch_size)
+    ]
+
+    discriminator.trainable = True
+    discriminator.train_on_batch(
+        real_images, np.ones((batch_size, 1))
+    )
+    discriminator.train_on_batch(
+        fake_images, np.zeros((batch_size, 1))
+    )
+
+    discriminator.trainable = False
+    noise = np.random.normal(0, 1, (batch_size, 100))
+    gan.train_on_batch(noise, np.ones((batch_size, 1)))
+
+    if epoch % 100 == 0:
+        print("Epoch:", epoch)
+
+noise = np.random.normal(0, 1, (10, 100))
+generated_images = generator.predict(noise)
+
+plt.figure(figsize=(10, 4))
+
+for i in range(10):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(generated_images[i].reshape(28, 28), cmap='gray')
+    plt.axis('off')
+
+plt.show()
+## OUTPUT
+# Training output
+Epoch: 0
+Epoch: 100
+Epoch: 200
+Epoch: 300
+Epoch: 400
+Epoch: 500
+Epoch: 600
+Epoch: 700
+Epoch: 800
+Epoch: 900
+# Generated output
+<img width="442" height="445" alt="image" src="https://github.com/user-attachments/assets/313ae018-3ee4-4fd3-a353-61ed0bea60fb" />
+
 
 
 ## Conclusion:
